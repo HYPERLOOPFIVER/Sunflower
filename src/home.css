@@ -1,0 +1,225 @@
+/* Full-Screen Chat Sidebar */
+*{
+    margin-top: 0%;
+}
+.chat-sidebar {
+    width: 100vw;
+    height: 100vh;
+    background: #0b141a; /* Deeper WhatsApp dark theme */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Header Section */
+.chat-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px;
+    background: #202c33; /* Dark header */
+    color: white;
+    font-weight: bold;
+    font-size: 22px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Search Bar Section */
+.search-container {
+    display: flex;
+    align-items: center;
+    padding: 12px 15px;
+    background: #202c33;
+}
+
+.search-bar {
+    width: 100%;
+    padding: 12px;
+    border-radius: 25px;
+    border: none;
+    outline: none;
+    background: rgba(42, 57, 66, 0.85); /* Slight transparency for depth */
+    color: white;
+    font-size: 14px;
+    transition: all 0.3s ease-in-out;
+    backdrop-filter: blur(8px);
+}
+
+.search-bar:focus {
+    background: rgba(55, 75, 90, 0.9);
+    box-shadow: 0 0 10px rgba(37, 211, 102, 0.3); /* WhatsApp green glow */
+}
+
+.search-bar::placeholder {
+    color: #aebac1;
+}
+
+/* User List */
+.user-list {
+    flex-grow: 1;
+    overflow-y: auto;
+    background: #111b21;
+}
+
+/* Individual User Item */
+.user-item {
+    display: flex;
+    align-items: center;
+    padding: 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #2a3942;
+    transition: all 0.3s ease-in-out;
+    position: relative;
+}
+
+.user-item:hover {
+    background: rgba(42, 57, 66, 0.5);
+    transform: scale(1.02); /* Slight pop-up effect */
+}
+
+.user-item.active {
+    background: rgba(37, 211, 102, 0.2);
+    border-left: 4px solid #25d366;
+}
+
+/* User Avatar */
+.user-avatar-container {
+    position: relative;
+    margin-right: 15px;
+}
+
+.user-avatar {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease-in-out;
+}
+
+.user-item:hover .user-avatar {
+    transform: scale(1.05);
+    border-color: #25d366;
+}
+
+/* Notification Dot */
+.notification-dot {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 12px;
+    height: 12px;
+    background: #25d366; /* WhatsApp green */
+    border-radius: 50%;
+    border: 2px solid #111b21;
+    box-shadow: 0 0 10px rgba(37, 211, 102, 0.5);
+}
+
+/* User Info */
+.user-info {
+    display: flex;
+    flex-direction: column;
+    color: white;
+}
+
+.user-name {
+    font-size: 18px;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+}
+
+.user-item:hover .user-name {
+    color: #25d366;
+}
+
+.last-message {
+    font-size: 14px;
+    color: #aebac1;
+    opacity: 0.85;
+    transition: opacity 0.3s ease-in-out;
+}
+
+.user-item:hover .last-message {
+    opacity: 1;
+}
+
+/* Scrollbar Customization */
+.user-list::-webkit-scrollbar {
+    width: 6px;
+}
+
+.user-list::-webkit-scrollbar-thumb {
+    background: rgba(42, 57, 66, 0.8);
+    border-radius: 10px;
+    transition: background 0.3s ease-in-out;
+}
+
+.user-list::-webkit-scrollbar-thumb:hover {
+    background: rgba(42, 57, 66, 1);
+}
+
+/* Animation Effects */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 5px rgba(37, 211, 102, 0.2);
+    }
+    50% {
+        box-shadow: 0 0 15px rgba(37, 211, 102, 0.5);
+    }
+    100% {
+        box-shadow: 0 0 5px rgba(37, 211, 102, 0.2);
+    }
+}
+
+/* Active User Glow */
+.user-item.active .user-avatar {
+    animation: glow 1.5s infinite ease-in-out;
+}
+.chat-container{
+background: #0b141a;}
+.navbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Keeps IDK on left and profile on right */
+    padding: 15px 20px;
+    color: white;
+}
+
+.log {
+    font-size: 34px;
+    font-weight: bold;
+    margin: 0;
+}
+
+.profile-link {
+    text-decoration: none;
+    color: white;
+    display: flex;
+    align-items: center;
+    font-size: 24px;
+}
+
+.profile-icon {
+    font-size: 30px;
+    margin-left: 10px;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+.profile-icon:hover {
+    transform: scale(1.1);
+}
+.loadk{
+    margin-top: 60%;
+}
