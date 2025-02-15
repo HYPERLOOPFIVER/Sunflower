@@ -17,6 +17,9 @@ import { Link } from "react-router-dom";
 import { FaHistory } from "react-icons/fa";
 import { waveform } from 'ldrs';
 import 'ldrs/ring';
+import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { SiNextra } from "react-icons/si";
+import { useNavigate } from "react-router-dom";
 // Sound notification function
 const playNotificationSound = () => {
   const audio = new Audio("/path/to/notification-sound.mp3"); // Update path to actual sound file
@@ -24,6 +27,7 @@ const playNotificationSound = () => {
 };
 
 const Chathome = () => {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
@@ -31,7 +35,7 @@ const Chathome = () => {
   const [chattedUsers, setChattedUsers] = useState(new Set());
   const [selectedUser, setSelectedUser] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const [showPopup, setShowPopup] = useState(false);
   useEffect(() => {
     const fetchChattedUsers = async () => {
       try {
@@ -130,9 +134,15 @@ const Chathome = () => {
     }
   };
 
-  const handleUserClick = async (user) => {
-    setSelectedUser(user);
+  
 
+ 
+
+  // Remove selectedUser state
+  // const [selectedUser, setSelectedUser] = useState(null);
+
+  const handleUserClick = async (user) => {
+    // Mark messages as read
     const userMessagesRef = collection(db, "messages");
     const q = query(
       userMessagesRef,
@@ -147,17 +157,8 @@ const Chathome = () => {
       await updateDoc(messageRef, { read: true });
     });
 
-    if (querySnapshot.empty) {
-      await addDoc(collection(db, "messages"), {
-        senderId: auth.currentUser?.uid,
-        receiverId: user.id,
-        text: "Hello, let's chat!",
-        timestamp: new Date(),
-        read: false,
-      });
-    }
-
-    setChattedUsers((prev) => new Set(prev.add(user.id)));
+    // Navigate to chat window
+    navigate(`/chatwindow/${user.id}`);
   };
 
   return (
@@ -166,13 +167,16 @@ const Chathome = () => {
       <div className="chat-sidebar">
         <div className="navbar">
           <h1 className="log">IDK</h1>
-          <Link to="/glimpse" className="profile-link">
-            <FaHistory className="profile-icon" />
+
+          <Link to="/kgon" className="profile-link">
+            <SiNextra className="profile-con" />
           </Link>
           <Link to="/profile" className="profile-link">
             <CgProfile className="profile-icon" />
           </Link>
         </div>
+
+       
         <input
           type="text"
           placeholder="Search users..."
@@ -186,7 +190,13 @@ const Chathome = () => {
 
         ) : search.length > 0 ? (
           searchResults.length === 0 ? (
-            <div>No users found.</div>
+            <div> <DotLottieReact
+            src="https://lottie.host/d244deba-2fac-41c3-870d-cf357d32857e/OJULAfMPJz.lottie"
+            loop
+            autoplay
+            
+          />
+          <center><h3 className="opi">User Not Found!</h3></center> </div>
           ) : (
             searchResults.map((user) => (
               <div key={user.id} onClick={() => handleUserClick(user)} className="user-item">
@@ -203,7 +213,12 @@ const Chathome = () => {
             ))
           )
         ) : users.length === 0 ? (
-          <div>No recent chats.</div>
+          <div><DotLottieReact
+          src="https://lottie.host/449250f2-15a8-4ce8-b1de-cf806536d750/IyOCmU4J65.lottie"
+          loop
+          autoplay
+        />
+     <center>   <h3 className="opi">START CHATTING</h3></center></div>
         ) : (
           users.map((user) => (
             <div key={user.id} onClick={() => handleUserClick(user)} className="user-item">
@@ -220,12 +235,11 @@ const Chathome = () => {
           ))
         )}
       </div>
-      <Link to="/kuo">
-        <button>🎉 Start Party Mode</button>
-      </Link>
+      
       <div className="chat-content">
         {selectedUser ? <ChatWindow selectedUser={selectedUser} /> : <p>Select a user to chat</p>}
       </div>
+      
     </div>
   );
 };

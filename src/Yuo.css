@@ -1,341 +1,222 @@
-/* General Reset */
+/* Reset all margins & paddings */
 * {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', sans-serif; /* Modern font */
-  }
-  
-  /* Full-screen container */
-  .partychat-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100vw;
-    height: 100vh;
-    background: linear-gradient(135deg, #1a1a1a, #2c3e50); /* Dark gradient background */
-    color: #ffffff;
-    overflow: hidden;
-  }
-  
-  /* Join screen styling */
-  .partychat-join-screen {
-    text-align: center;
-    background: rgba(255, 255, 255, 0.05);
-    padding: 2.5rem;
-    border-radius: 20px;
-    backdrop-filter: blur(15px);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-    animation: fadeIn 0.5s ease-in-out;
-  }
-  
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(-20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .partychat-join-screen h2 {
-    font-size: 2.5rem;
-    margin-bottom: 1.5rem;
-    color: #ffffff;
-    font-weight: 600;
-  }
-  
-  .partychat-input {
-    width: 100%;
-    padding: 0.75rem;
-    margin: 1rem 0;
-    border: none;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    font-size: 1rem;
-    outline: none;
-    transition: background 0.3s ease;
-  }
-  
-  .partychat-input:focus {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  
-  .partychat-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-  
-  .partychat-btn {
-    padding: 0.75rem 1.5rem;
-    margin: 0.5rem;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg, #1e88e5, #1565c0); /* Gradient button */
-    color: #ffffff;
-    font-size: 1rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-  }
-  
-  .partychat-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(30, 136, 229, 0.4);
-  }
-  
-  .partychat-btn-create {
-    background: linear-gradient(135deg, #4caf50, #45a049); /* Green gradient */
-  }
-  
-  .partychat-btn-create:hover {
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-  }
-  
-  .partychat-btn-join {
-    background: linear-gradient(135deg, #ff6f61, #ff4a3d); /* Red gradient */
-  }
-  
-  .partychat-btn-join:hover {
-    box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
-  }
-  
-  /* Chat container styling */
-  .partychat-chat-container {
-    display: flex;
-    flex-direction: column;
-    width: 100vw;
-    height: 100vh;
-    background: #1e1e1e;
-    overflow: hidden;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
-  }
-  
-  .partychat-chat-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1.5rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .partychat-chat-header h2 {
-    font-size: 1.75rem;
-    color: #ffffff;
-    font-weight: 600;
-  }
-  
-  .partychat-btn-leave {
-    background: linear-gradient(135deg, #ff6f61, #ff4a3d); /* Red gradient */
-  }
-  
-  .partychat-btn-leave:hover {
-    box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
-  }
-  
-  /* Chat messages styling */
-  .partychat-chat-messages {
-    flex: 1;
-    padding: 1.5rem;
-    overflow-y: auto;
-    scroll-behavior: smooth;
-  }
-  
-  .partychat-chat-bubble {
-    max-width: 70%;
-    margin-bottom: 1.5rem;
-    padding: 1rem;
-    border-radius: 15px;
-    position: relative;
-    word-wrap: break-word;
-    animation: slideIn 0.3s ease-in-out;
-  }
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .partychat-sent {
-    background: linear-gradient(135deg, #1e88e5, #1565c0); /* Blue gradient */
-    margin-left: auto;
-    border-bottom-right-radius: 5px;
-  }
-  
-  .partychat-received {
-    background: rgba(255, 255, 255, 0.1);
-    margin-right: auto;
-    border-bottom-left-radius: 5px;
-  }
-  
-  .partychat-chat-text {
-    font-size: 1rem;
-    color: #ffffff;
-    line-height: 1.5;
-  }
-  
-  .partychat-chat-time {
-    display: block;
-    font-size: 0.75rem;
-    color: rgba(255, 255, 255, 0.7);
-    margin-top: 0.5rem;
-  }
-  
-  /* Chat input container styling */
-  .partychat-chat-input-container {
-    display: flex;
-    padding: 1.5rem;
-    background: rgba(0, 0, 0, 0.3);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-  }
-  
-  .partychat-chat-input {
-    flex: 1;
-    padding: 0.75rem;
-    border: none;
-    border-radius: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-    font-size: 1rem;
-    outline: none;
-    transition: background 0.3s ease;
-  }
-  
-  .partychat-chat-input:focus {
-    background: rgba(255, 255, 255, 0.2);
-  }
-  
-  .partychat-chat-input::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-  }
-  
-  .partychat-btn-send {
-    margin-left: 1rem;
-    background: linear-gradient(135deg, #4caf50, #45a049); /* Green gradient */
-  }
-  
-  .partychat-btn-send:hover {
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-  }
-  /* Yuo.css */
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+/* Main Container */
 .partychat-container {
-  max-width: 1000px;
-  margin: 2rem auto;
-  background: #1a1a1a;
-  border-radius: 15px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.3);
-  color: white;
-}
-
-.partychat-join-screen {
-  padding: 2rem;
-  text-align: center;
-}
-
-.partychat-btn {
-  padding: 0.8rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  margin: 0.5rem;
-}
-
-.partychat-btn-create {
-  background: #4CAF50;
-  color: white;
-}
-
-.partychat-btn-join {
-  background: #2196F3;
-  color: white;
-}
-
-.partychat-btn-leave {
-  background: #f44336;
-  color: white;
-}
-
-.partychat-btn-control {
-  background: #9c27b0;
-  color: white;
-}
-
-.partychat-btn:disabled {
-  background: #666;
-  cursor: not-allowed;
-}
-
-.partychat-chat-container {
-  display: grid;
-  grid-template-rows: auto 1fr auto;
-  height: 80vh;
-}
-
-.partychat-media-container {
-  background: #000;
-  padding: 1rem;
-  border-bottom: 2px solid #333;
-}
-
-#youtube-player {
-  margin: 0 auto;
-}
-
-.partychat-media-controls {
+  background-color: #1e1e1e;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
+  overflow: hidden;
   display: flex;
-  gap: 0.5rem;
-  padding: 1rem;
-  background: #222;
-  border-radius: 8px;
-  margin-top: 1rem;
+  flex-direction: column;
+  position: absolute;
+  top: 0;
+  left: 0;
 }
 
-.partychat-media-input {
+/* Join & Chat Containers */
+.partychat-join-screen, .partychat-chat-container {
   flex: 1;
-  padding: 0.8rem;
-  border: 1px solid #444;
-  border-radius: 5px;
-  background: #333;
-  color: white;
+  padding: 20px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
+/* Headings */
+.partychat-join-screen h2, .partychat-chat-header h2 {
+  color: #25d366;
+  margin-bottom: 20px;
+  font-size: 22px;
+}
+
+/* Buttons */
+.partychat-btn {
+  background-color: #25d366;
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+  margin: 10px 0;
+}
+
+.partychat-btn:hover {
+  background-color: #1da851;
+  box-shadow: 0 6px 16px rgba(37, 211, 102, 0.6);
+}
+
+/* Input Fields */
+.partychat-input {
+  width: 80%;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  transition: 0.3s ease-in-out;
+  margin-bottom: 10px;
+}
+
+.partychat-input:focus {
+  border-color: #25d366;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Chat Header */
+.partychat-chat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ✅ Small Music & YouTube Player */
+.partychat-media-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px;
+  background-color: #2e2e2e;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+/* ✅ Make Music Player Very Small */
+#youtube-player {
+  width: 50px;
+  height: 50px;
+  background-color: #000;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+/* Music Input */
+.partychat-media-input {
+  width: 150px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
+  font-size: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+  margin-right: 5px;
+}
+
+.partychat-media-input:focus {
+  border-color: #25d366;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Chat Messages */
 .partychat-chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
-  background: #121212;
+  padding: 10px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
+/* Chat Bubbles */
 .partychat-chat-bubble {
-  max-width: 70%;
-  padding: 0.8rem;
-  margin: 0.5rem;
-  border-radius: 15px;
-  animation: fadeIn 0.3s ease;
+  background-color: #2e2e2e;
+  padding: 10px 14px;
+  border-radius: 20px;
+  margin-bottom: 10px;
+  max-width: 80%;
+  word-wrap: break-word;
 }
 
+/* Sent & Received Messages */
 .partychat-sent {
-  background: #2d2d2d;
-  margin-left: auto;
+  background-color: #1da851;
+  align-self: flex-end;
 }
 
 .partychat-received {
-  background: #333;
-  margin-right: auto;
+  background-color: #2e2e2e;
+  align-self: flex-start;
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+.partychat-chat-sender {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.partychat-chat-time {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.6);
+  margin-top: 5px;
+  text-align: right;
+}
+
+/* Chat Input Container */
+.partychat-chat-input-container {
+  display: flex;
+  align-items: center;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(10px);
+}
+
+/* Chat Input */
+.partychat-chat-input {
+  flex-grow: 1;
+  padding: 10px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 25px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #e0e0e0;
+}
+
+.partychat-chat-input:focus {
+  border-color: #25d366;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Send Button */
+.partychat-btn-send {
+  margin-left: 10px;
+}
+
+/* ✅ Responsive Design (For Phones) */
+@media (max-width: 768px) {
+  .partychat-container {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+
+  .partychat-chat-header h2 {
+    font-size: 18px;
+  }
+
+  .partychat-btn, .partychat-input, .partychat-media-input, .partychat-chat-input {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  .partychat-chat-messages {
+    max-height: 250px;
+  }
+
+  /* ✅ Make Music Player Even Smaller on Mobile */
+  #youtube-player {
+    width: 40px;
+    height: 40px;
+  }
 }

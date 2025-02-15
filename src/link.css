@@ -1,0 +1,124 @@
+/* link.css */
+
+/* Container styling */
+.natio > center {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    padding: 2rem;
+    min-height: 100vh;
+    background: #0b141a;
+    width: 100vw;
+}
+
+/* Base link styling */
+.profile-ink, .profile-lnk {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem 2.5rem;
+    border-radius: 15px;
+    text-decoration: none;
+    color: white;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Hover effects */
+.profile-ink:hover, .profile-lnk:hover {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Icon styling */
+.profile-ion {
+    font-size: 1.8rem;
+    transition: transform 0.3s ease;
+}
+
+/* Specific styles for Party Mode link */
+.profile-ink {
+    background: rgba(159, 122, 234, 0.2);
+    border: 1px solid rgba(159, 122, 234, 0.3);
+}
+
+.profile-ink:hover .profile-ion {
+    transform: rotate(15deg) scale(1.2);
+    filter: drop-shadow(0 0 8px #9f7aea);
+}
+
+/* Specific styles for Privacy Policy link */
+.profile-lnk {
+    background: rgba(72, 187, 120, 0.2);
+    border: 1px solid rgba(72, 187, 120, 0.3);
+}
+
+.profile-lnk:hover .profile-ion {
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 8px #48bb78);
+}
+
+/* Text styling */
+span {
+    font-family: 'Arial Rounded MT Bold', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+}
+
+/* Particle effect for Party Mode */
+.profile-ink:hover::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(circle, #fff 10%, transparent 10%);
+    background-size: 15px 15px;
+    animation: party 0.5s linear infinite;
+}
+
+@keyframes party {
+    0% { background-position: 0 0; }
+    100% { background-position: 15px 15px; }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    div > center {
+        padding: 1rem;
+    }
+    
+    .profile-ink, .profile-lnk {
+        padding: 1rem 1.5rem;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    span {
+        font-size: 1rem;
+    }
+}
+
+/* Loading animation */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+.profile-ink, .profile-lnk {
+    animation: float 3s ease-in-out infinite;
+}
+.logio{
+    display: flex;
+    align-items: center;
+    justify-content: space-between; /* Keeps IDK on left and profile on right */
+    padding: 15px 20px;
+    color: white;
+    background-color: #0b141a;
+    border: wheat 8px;
+}

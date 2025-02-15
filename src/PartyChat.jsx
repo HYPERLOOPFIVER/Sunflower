@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore";
 import "./Yuo.css";
 import 'ldrs/ring';
+import { runTransaction } from "firebase/firestore";
 
 const getYouTubeVideoId = (url) => {
   const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -29,40 +30,58 @@ const PartyChat = () => {
 
   // YouTube Player Initialization
   const loadYouTubeAPI = useCallback(() => {
-    if (window.YT) {
+    if (window.YT && window.YT.Player) {
       initializePlayer();
       return;
     }
-
+  
     const tag = document.createElement('script');
     tag.src = 'https://www.youtube.com/iframe_api';
-    const firstScriptTag = document.getElementsByTagName('script')[0];
-    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
+    tag.async = true;
+    tag.defer = true;
+    document.body.appendChild(tag);
+  
+    tag.onload = () => {
+      if (window.YT && window.YT.Player) {
+        initializePlayer();
+      }
+    };
+  
     window.onYouTubeIframeAPIReady = () => {
       initializePlayer();
     };
   }, []);
+  
+
 
   const initializePlayer = () => {
-    try {
-      playerRef.current = new window.YT.Player('youtube-player', {
-        height: '200',
-        width: '300',
-        events: {
-          'onReady': () => {
-            setIsPlayerReady(true);
-            if (currentTrack) {
-              playerRef.current.loadVideoById(currentTrack);
-            }
-          },
-          'onStateChange': onPlayerStateChange
-        }
-      });
-    } catch (error) {
-      console.error('Player initialization failed:', error);
+    if (!window.YT || !window.YT.Player) {
+      console.error("YouTube API not loaded yet.");
+      return;
     }
+  
+    playerRef.current = new window.YT.Player('youtube-player', {
+      height: '100',
+      width: '100',
+      playerVars: {
+        autoplay: 1,
+        controls: 1,
+        enablejsapi: 1, // Ensures API loads faster
+        origin: window.location.origin, // Helps avoid cross-origin issues
+      },
+      events: {
+        'onReady': (event) => {
+          setIsPlayerReady(true);
+          if (currentTrack) {
+            event.target.loadVideoById(currentTrack);
+          }
+        },
+        'onStateChange': onPlayerStateChange
+      }
+    });
+    
   };
+  
 
   const onPlayerStateChange = (event) => {
     if (user?.uid === party?.hostId && isPlayerReady) {
@@ -184,22 +203,30 @@ const PartyChat = () => {
   };
 
   const sendMessage = async () => {
-    if (!partyId || !message.trim()) return;
+    if (!partyId || !message.trim()) return alert("Message cannot be empty!");
   
     const messageData = {
-      senderId: user.uid,
-      senderName: user.displayName || "Unknown",
+      senderId: user?.uid || "Unknown",
+      senderName: user?.displayName || "Unknown",
       text: message,
-      timestamp: serverTimestamp()
+      timestamp: new Date() // Using JavaScript timestamp instead of serverTimestamp()
     };
   
-    await updateDoc(doc(db, "parties", partyId), {
-      messages: arrayUnion(messageData)
-    });
+    try {
+      console.log("Sending message:", messageData); // Debugging log
   
-    setMessage("");
+      await updateDoc(doc(db, "parties", partyId), {
+        messages: arrayUnion(messageData)
+      });
+  
+      console.log("Message sent successfully!");
+      setMessage("");
+    } catch (error) {
+      console.error("Error sending message:", error); // Log exact error
+      alert("Failed to send message. Error: " + error.message);
+    }
   };
-
+  
   // Effects
   useEffect(() => {
     loadYouTubeAPI();
@@ -235,7 +262,7 @@ const PartyChat = () => {
   }, [partyId, syncPlayback]);
 
   return (
-    <div className="partychat-container">
+<center className="uiop">    <div className="partychat-container">
       {!isChatOpen ? (
         <div className="partychat-join-screen">
           <h2>🎉 Virtual Party</h2>
@@ -326,6 +353,7 @@ const PartyChat = () => {
         </div>
       )}
     </div>
+    </center>
   );
 };
 
