@@ -19,7 +19,11 @@
   
   /* Login Box Styling */
   .login-box {
+<<<<<<< HEAD
     background: #fff; /* Clean white background for a premium feel */
+=======
+    background: #ffffff; /* Clean white background for a premium feel */
+>>>>>>> 9c35781 (Initial commit)
     border-radius: 20px;
     padding: 40px;
     width: 100%;
