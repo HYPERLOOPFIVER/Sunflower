@@ -201,10 +201,8 @@ const ChatWindow = ({ selectedUser: propSelectedUser }) => {
           bgcolor: "rgba(31, 31, 31, 0.8)",
           backdropFilter: "blur(12px)",
           display: "flex",
-<<<<<<< HEAD
-=======
+
           width: "100vw",
->>>>>>> 9c35781 (Initial commit)
           alignItems: "center",
           borderBottom: "1px solid rgba(255,255,255,0.1)",
           boxShadow: "0 8px 32px rgba(0,0,0,0.2)",

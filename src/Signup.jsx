@@ -25,11 +25,10 @@ const SignUp = () => {
       });
 
       // Redirect to chat page
-<<<<<<< HEAD
+
       navigate("/chat");
-=======
+
       navigate("/home");
->>>>>>> 9c35781 (Initial commit)
     } catch (error) {
       console.error(error);
     }
@@ -39,12 +38,12 @@ const SignUp = () => {
     <div className="signup-container">
       <div className="signup-box">
       <div className="logo">
-<<<<<<< HEAD
+
           <img src="https://img.freepik.com/premium-vector/chat-logo_910989-37.jpg" alt="App Logo" className="app-logo" />
-=======
+
         <center> <img src="https://img.freepik.com/premium-vector/chat-logo_910989-37.jpg" alt="App Logo" className="app-logo" /></center>
         <h3>India's First Most Amazing Chatting Service. From - Parikshit 😉😉😉</h3>
->>>>>>> 9c35781 (Initial commit)
+
         </div>
         <h2>Sign Up</h2>
         <form onSubmit={handleSignUp}>

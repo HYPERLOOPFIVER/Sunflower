@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { db, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from "./firebase";
+import { db, collection, addDoc, getDocs, query, where, orderBy, serverTimestamp } from "./Firebase";
 import { getAuth } from "firebase/auth";
 import axios from "axios"; // For Cloudinary upload
 
