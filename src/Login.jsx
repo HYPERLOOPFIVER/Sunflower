@@ -55,12 +55,11 @@ const Login = () => {
     <div className="login-container">
       <div className="login-box">
         <div className="logo">
-          <center>
-            <img src="https://img.freepik.com/premium-vector/chat-logo_910989-37.jpg" alt="App Logo" className="app-logo" />
-          </center>
+         <h1 className="newop">Sunflower 🌻</h1>
+         <p>From Saddest person of world <strong>Parikshit</strong></p>
         </div>
         <h2>Welcome Back</h2>
-        <p>Made by Parikshit With ❤️</p>
+     
         <div className="input-container">
           <input
             type="email"

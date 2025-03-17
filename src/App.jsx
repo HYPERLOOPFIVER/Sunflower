@@ -15,6 +15,7 @@ import { grid } from 'ldrs';
 import './App.css';
 import ChatWindow from "./ChatWindow";
 import { setupPresence } from "./presence"; // Import the presence system
+import Call from "./Call";
 
 grid.register();
 
@@ -53,6 +54,7 @@ const App = () => {
         <Route path="/signup" element={currentUser ? <Navigate to="/home" /> : <SignUp />} />
         <Route path="/home" element={currentUser ? <Chathome /> : <Navigate to="/" />} />
         <Route path="/profile" element={currentUser ? <ProfilePage /> : <Navigate to="/" />} />
+        <Route path="/call" element={currentUser ? <Call/> : <Navigate to="/" />} />
         <Route path="/chatwindow/:userId" element={<ChatWindow />} />
         <Route path="/glimpse" element={currentUser ? <GlimpsePage /> : <Navigate to="/" />} />
         <Route path="/kuo" element={currentUser ? <PartyChat /> : <Navigate to="/" />} />

@@ -1,66 +1,114 @@
 import { db, auth } from "./Firebase";
 import { getDatabase, ref, onValue, off } from "firebase/database";
-import { collection, addDoc, query, where, orderBy, onSnapshot, doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { 
+  collection, 
+  addDoc, 
+  query, 
+  where, 
+  orderBy, 
+  onSnapshot, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  serverTimestamp,
+  deleteDoc 
+} from "firebase/firestore";
+import CallIcon from "@mui/icons-material/Call";
+import VideocamIcon from "@mui/icons-material/Videocam";
 import { useParams } from "react-router-dom";
 import Picker from "@emoji-mart/react";
 import data from "@emoji-mart/data";
 import { motion, AnimatePresence } from "framer-motion";
-import { ThemeProvider, createTheme } from "@mui/material/styles";
-import { Avatar, Box, Button, Grid, IconButton, Paper, TextField, Typography, Tooltip, Fade, Badge } from "@mui/material";
+import { ThemeProvider, createTheme, alpha } from "@mui/material/styles";
+import { 
+  Avatar, 
+  Box, 
+  IconButton, 
+  TextField, 
+  Typography, 
+  Badge, 
+  Stack, 
+  Dialog, 
+  DialogContent,
+  Menu,
+  MenuItem,
+  LinearProgress
+} from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
 import EmojiEmotionsIcon from "@mui/icons-material/EmojiEmotions";
-import { styled, keyframes } from "@mui/material/styles";
-import { useEffect, useState, useCallback } from "react";
+import CloseIcon from "@mui/icons-material/Close";
+import ImageIcon from "@mui/icons-material/Image";
+import VideoLibraryIcon from "@mui/icons-material/VideoLibrary";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import MicIcon from "@mui/icons-material/Mic";
+import StopIcon from "@mui/icons-material/Stop";
+import { useEffect, useState, useCallback, useRef } from "react";
+import axios from "axios";
+import Call from "./Call";
+// Cloudinary Configuration
+const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+const CLOUDINARY_CLOUD_NAME = 'dfzmg1jtd';
 
-const theme = createTheme({
+// Minimalist Premium Theme Configuration
+const premiumTheme = createTheme({
   palette: {
     mode: "dark",
-    primary: { main: "#00d9c5" },
-    secondary: { main: "#9da9b3" },
+    primary: { 
+      main: "#5A4FCF",     // Deep Indigo
+      light: "#7E6FEA",    // Soft Lavender
+      dark: "#3A2E8B"      // Dark Indigo
+    },
     background: { 
-      default: "#0a0a0a",
-      paper: "#1f1f1f" 
+      default: "#121212",  // Ultra-Dark Background
+      paper: "#1A1A2E"     // Slightly Lighter Panel
     },
     text: {
-      primary: "#f0f4f6",
-      secondary: "#9da9b3",
+      primary: "#E2E8F0",  // Soft Slate White
+      secondary: "#A0AEC0" // Muted Gray
     },
-  },
-  shape: {
-    borderRadius: 12,
+    divider: "rgba(255,255,255,0.12)"
   },
   typography: {
-    fontFamily: 'Inter, sans-serif',
-    fontSize: 14,
+    fontFamily: "'Inter', system-ui, -apple-system, BlinkMacSystemFont, sans-serif",
+    fontSize: 15,
+    fontWeightLight: 300,
+    fontWeightRegular: 400,
+    fontWeightMedium: 500,
+    fontWeightBold: 700,
+    h6: {
+      fontWeight: 600,
+      letterSpacing: '-0.02em'
+    },
+    body1: {
+      fontWeight: 400,
+      lineHeight: 1.6
+    }
   },
+  components: {
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 12,
+            backgroundColor: 'rgba(255,255,255,0.05)',
+            transition: 'all 0.2s ease',
+            '&:hover': {
+              backgroundColor: 'rgba(255,255,255,0.1)'
+            },
+            '&.Mui-focused': {
+              boxShadow: `0 0 0 2px ${alpha('#5A4FCF', 0.3)}`
+            }
+          }
+        }
+      }
+    }
+  }
 });
 
-const bubbleEntrance = keyframes`
-  0% { transform: translateY(20px) scale(0.9); opacity: 0; }
-  100% { transform: translateY(0) scale(1); opacity: 1; }
-`;
-
-const MessageBubble = styled(Box)(({ theme, iscurrentuser }) => ({
-  maxWidth: "75%",
-  padding: "14px 18px",
-  marginBottom: theme.spacing(2),
-  borderRadius: iscurrentuser ? "20px 4px 20px 20px" : "4px 20px 20px 20px",
-  background: iscurrentuser 
-    ? `linear-gradient(135deg, ${theme.palette.primary.main} 0%, #00b8a9 100%)`
-    : theme.palette.background.paper,
-  color: iscurrentuser ? theme.palette.common.white : theme.palette.text.primary,
-  position: "relative",
-  alignSelf: iscurrentuser ? "flex-end" : "flex-start",
-  boxShadow: theme.shadows[4],
-  animation: `${bubbleEntrance} 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)`,
-  transition: "transform 0.2s, box-shadow 0.2s",
-  "&:hover": {
-    transform: "translateY(-2px)",
-    boxShadow: theme.shadows[6],
-  },
-}));
-
 const ChatWindow = ({ selectedUser: propSelectedUser }) => {
+  const [showCallModal, setShowCallModal] = useState(false);
+  const [callType, setCallType] = useState(null);
+
   const { userId } = useParams();
   const [selectedUser, setSelectedUser] = useState(propSelectedUser || null);
   const [messages, setMessages] = useState([]);
@@ -70,6 +118,27 @@ const ChatWindow = ({ selectedUser: propSelectedUser }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingTimeout, setTypingTimeout] = useState(null);
   const [onlineStatus, setOnlineStatus] = useState(false);
+  const [userDetails, setUserDetails] = useState(null);
+  const [replyingTo, setReplyingTo] = useState(null);
+  
+  // Media sharing states
+  const [mediaType, setMediaType] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
+  const fileInputRef = useRef(null);
+
+  // Audio recording states
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
+  const [audioBlob, setAudioBlob] = useState(null);
+  const [audioPreviewUrl, setAudioPreviewUrl] = useState(null);
+  const audioTimerRef = useRef(null);
+
+  // Message deletion states
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [selectedMessage, setSelectedMessage] = useState(null);
 
   // Fetch user data
   useEffect(() => {
@@ -79,6 +148,7 @@ const ChatWindow = ({ selectedUser: propSelectedUser }) => {
         const userSnap = await getDoc(userRef);
         if (userSnap.exists()) {
           setSelectedUser({ id: userId, ...userSnap.data() });
+          setUserDetails(userSnap.data());
         }
       }
     };
@@ -156,6 +226,200 @@ const ChatWindow = ({ selectedUser: propSelectedUser }) => {
     return () => unsubscribe();
   }, [selectedUser]);
 
+  // Media upload handler
+  const handleMediaUpload = async () => {
+    if (!selectedFile) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, 
+        formData
+      );
+
+      if (!auth.currentUser || !selectedUser || !chatId) return;
+      
+      await addDoc(collection(db, "messages"), {
+        chatId,
+        senderId: auth.currentUser.uid,
+        receiverId: selectedUser.id,
+        content: response.data.secure_url,
+        type: mediaType, // 'image' or 'video'
+        timestamp: serverTimestamp(),
+        seen: false,
+        replyTo: replyingTo?.id || null,
+      });
+
+      setSelectedFile(null);
+      setPreviewUrl(null);
+      setMediaType(null);
+    } catch (error) {
+      console.error("Media upload error:", error);
+    }
+  };
+
+  // File selection handler
+  const handleFileSelect = (event, type) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setMediaType(type);
+      
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewUrl(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const initiateVideoCall = () => {
+    setCallType('video');
+    setShowCallModal(true);
+  };
+
+  const initiateAudioCall = () => {
+    setCallType('audio');
+    setShowCallModal(true);
+  };
+
+  // Audio recording handlers
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      
+      // Reset audio chunks
+      const chunks = [];
+      setAudioChunks(chunks);
+      
+      recorder.ondataavailable = (e) => {
+        chunks.push(e.data);
+        setAudioChunks(prevChunks => [...prevChunks, e.data]);
+      };
+      
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        const audioUrl = URL.createObjectURL(blob);
+        
+        setAudioBlob(blob);
+        setAudioPreviewUrl(audioUrl);
+        setRecordingDuration(0);
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+
+      // Start timer
+      let duration = 0;
+      audioTimerRef.current = setInterval(() => {
+        duration += 1;
+        setRecordingDuration(duration);
+      }, 1000);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      
+      // Clear timer
+      if (audioTimerRef.current) {
+        clearInterval(audioTimerRef.current);
+      }
+    }
+  };
+
+  const sendAudioMessage = async () => {
+    if (!audioBlob) return;
+  
+    try {
+      const formData = new FormData();
+      formData.append('file', audioBlob, 'audio.wav');
+      formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+      formData.append('cloud_name', CLOUDINARY_CLOUD_NAME);
+  
+      console.log('Uploading audio with FormData:', formData);
+  
+      const response = await axios.post(
+        `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/upload`, 
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+  
+      console.log('Cloudinary upload response:', response.data);
+  
+      if (!auth.currentUser || !selectedUser || !chatId) {
+        console.error('Missing required data', { 
+          currentUser: !!auth.currentUser, 
+          selectedUser: !!selectedUser, 
+          chatId: !!chatId 
+        });
+        return;
+      }
+  
+      const messageRef = await addDoc(collection(db, "messages"), {
+        chatId,
+        senderId: auth.currentUser.uid,
+        receiverId: selectedUser.id,
+        content: response.data.secure_url,
+        type: "audio",
+        timestamp: serverTimestamp(),
+        seen: false,
+        duration: recordingDuration,
+        replyTo: replyingTo?.id || null,
+      });
+  
+      console.log('Message added with ID:', messageRef.id);
+  
+      // Reset audio states
+      setAudioBlob(null);
+      setAudioPreviewUrl(null);
+      setRecordingDuration(0);
+      setReplyingTo(null);
+    } catch (error) {
+      console.error("Full error uploading audio:", error);
+      console.error("Error response:", error.response?.data);
+    }
+  };
+
+  const cancelAudioMessage = () => {
+    // Reset all audio-related states
+    setAudioBlob(null);
+    setAudioPreviewUrl(null);
+    setRecordingDuration(0);
+    setIsRecording(false);
+    
+    // Clear timer
+    if (audioTimerRef.current) {
+      clearInterval(audioTimerRef.current);
+    }
+  };
+
+  // Message deletion handler
+  const handleDeleteMessage = async () => {
+    if (!selectedMessage) return;
+
+    try {
+      await deleteDoc(doc(db, "messages", selectedMessage.id));
+      setAnchorEl(null);
+      setSelectedMessage(null);
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
+  };
+
   // Message input handler
   const handleInputChange = (e) => {
     setNewMessage(e.target.value);
@@ -182,242 +446,662 @@ const ChatWindow = ({ selectedUser: propSelectedUser }) => {
       type: "text",
       timestamp: serverTimestamp(),
       seen: false,
+      replyTo: replyingTo?.id || null,
     });
     setNewMessage("");
+    setReplyingTo(null);
   };
 
-  return (
-    <ThemeProvider theme={theme}>
-      <Box sx={{ 
-        height: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        background: "linear-gradient(45deg, #0a0a0a 0%, #1a1a1a 100%)",
-        position: "relative",
+  // Get display name
+  const getDisplayName = () => {
+    if (!selectedUser) return "Unknown User";
+    return selectedUser.name || selectedUser.idkNumber || "Unknown User";
+  };
+
+  // Handle reply click
+  const handleReplyClick = (message) => {
+    setReplyingTo(message);
+  };
+
+  // Media type selection modal
+  const MediaTypeSelector = () => (
+    <Dialog 
+      open={!!mediaType} 
+      onClose={() => {
+        setMediaType(null);
+        setSelectedFile(null);
+        setPreviewUrl(null);
+      }}
+    >
+      <DialogContent sx={{ 
+        display: 'flex', 
+        flexDirection: 'column', 
+        alignItems: 'center', 
+        gap: 2,
+        background: premiumTheme.palette.background.paper
       }}>
+        {previewUrl && (
+          <Box sx={{ 
+            maxWidth: 300, 
+            maxHeight: 300, 
+            overflow: 'hidden', 
+            borderRadius: 2 
+          }}>
+            {mediaType === 'image' ? (
+              <img 
+                src={previewUrl} 
+                alt="Preview" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain' 
+                }} 
+              />
+            ) : (
+              <video 
+                src={previewUrl} 
+                controls 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain' 
+                }}
+              />
+            )}
+          </Box>
+        )}
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <IconButton 
+              onClick={handleMediaUpload}
+              sx={{ 
+                background: premiumTheme.palette.primary.main,
+                color: '#fff',
+                '&:hover': { background: alpha(premiumTheme.palette.primary.main, 0.9) }
+              }}
+            >
+              <SendIcon />
+            </IconButton>
+          </motion.div>
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <IconButton 
+              onClick={() => {
+                setMediaType(null);
+                setSelectedFile(null);
+                setPreviewUrl(null);
+              }}
+              sx={{ 
+                background: premiumTheme.palette.error.main,
+                color: '#fff',
+                '&:hover': { background: alpha(premiumTheme.palette.error.main, 0.9) }
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </motion.div>
+        </Box>
+      </DialogContent>
+    </Dialog>
+  );
+
+  // Audio preview component
+  const AudioPreview = () => (
+    <Box sx={{
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 2,
+      p: 1,
+      background: alpha(premiumTheme.palette.primary.main, 0.1),
+      borderRadius: 2
+    }}>
+      <audio 
+        controls 
+        src={audioPreviewUrl} 
+        style={{ width: '100%', maxWidth: 300 }} 
+      />
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <IconButton 
+          onClick={sendAudioMessage}
+          sx={{
+            background: premiumTheme.palette.primary.main,
+            color: '#fff',
+            '&:hover': { background: alpha(premiumTheme.palette.primary.main, 0.9) }
+          }}
+        >
+          <SendIcon fontSize="small" />
+        </IconButton>
+        <IconButton 
+          onClick={cancelAudioMessage}
+          sx={{
+            background: premiumTheme.palette.error.main,
+            color: '#fff',
+            '&:hover': { background: alpha(premiumTheme.palette.error.main, 0.9) }
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
+    </Box>
+  );
+
+  // Recording UI Component
+  const RecordingUI = () => (
+    <Box sx={{
+      display: 'flex', 
+      alignItems: 'center', 
+      gap: 2,
+      p: 1,
+      background: alpha(premiumTheme.palette.error.main, 0.1),
+      borderRadius: 2
+    }}>
+      <Box sx={{ flex: 1 }}>
+        <Typography 
+          variant="body2" 
+          color="error" 
+          sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: 1 
+          }}
+        >
+          <Box sx={{
+            width: 10,
+            height: 10,
+            borderRadius: '50%',
+            background: premiumTheme.palette.error.main,
+            animation: 'pulse 1s infinite'
+          }} />
+          Recording: {recordingDuration}s
+        </Typography>
+        <LinearProgress 
+          variant="determinate" 
+          value={(recordingDuration / 60) * 100} 
+          color="error"
+          sx={{ mt: 1 }}
+        />
+      </Box>
+      <IconButton 
+        onClick={stopRecording}
+        sx={{
+          background: premiumTheme.palette.error.main,
+          color: '#fff',
+          '&:hover': { background: alpha(premiumTheme.palette.error.main, 0.9) }
+        }}
+      >
+        <StopIcon fontSize="small" />
+      </IconButton>
+    </Box>
+  );
+
+  // Minimalist Message Bubble Component
+  const MessageBubble = ({ msg, isCurrentUser }) => {
+    const messageStyle = {
+      maxWidth: '75%',
+      minWidth: '120px',
+      padding: '12px 16px',
+      borderRadius: '16px',
+      background: isCurrentUser 
+        ? alpha(premiumTheme.palette.primary.main, 0.2)
+        : 'rgba(255,255,255,0.05)',
+      color: premiumTheme.palette.text.primary,
+      boxShadow: 'none',
+      border: `1px solid ${isCurrentUser 
+        ? alpha(premiumTheme.palette.primary.main, 0.3)
+        : 'rgba(255,255,255,0.1)'}`,
+      position: 'relative',
+      transition: 'all 0.2s ease'
+    };
+
+    return (
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.2 }}
+      >
+        <Box sx={messageStyle}>
+          {msg.replyTo && (
+            <Box sx={{
+              borderLeft: `3px solid ${alpha(premiumTheme.palette.primary.main, 0.6)}`,
+              pl: 1.5,
+              mb: 1,
+              color: premiumTheme.palette.text.secondary,
+              fontSize: '0.8rem'
+            }}>
+              {messages.find(m => m.id === msg.replyTo)?.content || "Original message"}
+            </Box>
+          )}
+          {msg.type === 'text' ? (
+            <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+              {msg.content}
+            </Typography>
+          ) : msg.type === 'image' ? (
+            <Box sx={{ 
+              width: '100%', 
+              maxWidth: 300, 
+              borderRadius: 2, 
+              overflow: 'hidden' 
+            }}>
+              <img 
+                src={msg.content} 
+                alt="Shared media" 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain',
+                  borderRadius: 8
+                }} 
+              />
+            </Box>
+          ) : msg.type === 'video' ? (
+            <Box sx={{ 
+              width: '100%', 
+              maxWidth: 300, 
+              borderRadius: 2, 
+              overflow: 'hidden' 
+            }}>
+              <video 
+                src={msg.content} 
+                controls 
+                style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  objectFit: 'contain',
+                  borderRadius: 8
+                }}
+              />
+            </Box>
+          ) : msg.type === 'audio' ? (
+            <Box sx={{ 
+              width: '100%', 
+              maxWidth: 300, 
+              borderRadius: 2, 
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1
+            }}>
+              <audio 
+                controls 
+                src={msg.content} 
+                style={{ 
+                  width: '100%', 
+                  maxWidth: 300,
+                  borderRadius: 8 
+                }}
+              />
+              {msg.duration && (
+                <Typography variant="caption" sx={{ 
+                  color: premiumTheme.palette.text.secondary,
+                  textAlign: 'center'
+                }}>
+                  Duration: {msg.duration}s
+                </Typography>
+              )}
+            </Box>
+          ) : null}
+          
+          <Stack 
+            direction="row" 
+            justifyContent="space-between" 
+            alignItems="center" 
+            sx={{ mt: 1, opacity: 0.7 }}
+          >
+            <Typography variant="caption" sx={{ 
+              fontSize: '0.7rem',
+              color: premiumTheme.palette.text.secondary
+            }}>
+              {msg.timestamp?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </Typography>
+            {isCurrentUser && (
+              <Typography variant="caption" sx={{ 
+                fontSize: '0.7rem',
+                color: premiumTheme.palette.text.secondary
+              }}>
+                {msg.seen ? '✓✓' : '✓'}
+              </Typography>
+            )}
+          </Stack>
+          {isCurrentUser && (
+            <Box sx={{ position: 'absolute', right: -8, bottom: -8 }}>
+              <IconButton
+                size="small"
+                onClick={() => handleReplyClick(msg)}
+                sx={{
+                  background: premiumTheme.palette.background.paper,
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                  mr: 1,
+                  '&:hover': {
+                    background: alpha(premiumTheme.palette.background.paper, 0.9)
+                  }
+                }}
+              >
+                <Typography variant="caption" sx={{ fontSize: '0.7rem' }}>
+                  Reply
+                </Typography>
+              </IconButton>
+              
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  setAnchorEl(e.currentTarget);
+                  setSelectedMessage(msg);
+                }}
+                sx={{
+                  background: premiumTheme.palette.background.paper,
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)',
+                  '&:hover': {
+                    background: alpha(premiumTheme.palette.background.paper, 0.9)
+                  }
+                }}
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          )}
+        </Box>
+      </motion.div>
+    );
+  };
+  return (
+    
+      <ThemeProvider theme={premiumTheme}>
+        <Box sx={{
+          height: '100vh',
+          display: 'flex',
+          flexDirection: 'column',
+          position: 'relative',
+          overflow: 'hidden',
+          background: premiumTheme.palette.background.default
+        }}>
+          {/* Hidden file inputs */}
+          <input 
+            type="file" 
+            ref={fileInputRef}
+            accept={mediaType === 'image' ? 'image/*' : 'video/*'}
+            style={{ display: 'none' }}
+            onChange={(e) => handleFileSelect(e, mediaType)}
+          />
+    
+          {/* Media Type Selection Modal */}
+          <MediaTypeSelector />
+    
+          {/* Message Options Menu */}
+          <Menu
+            anchorEl={anchorEl}
+            open={Boolean(anchorEl)}
+            onClose={() => {
+              setAnchorEl(null);
+              setSelectedMessage(null);
+            }}
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+          >
+            <MenuItem 
+              onClick={handleDeleteMessage}
+              sx={{ 
+                color: premiumTheme.palette.error.main,
+                '&:hover': { 
+                  background: alpha(premiumTheme.palette.error.main, 0.1) 
+                }
+              }}
+            >
+              Delete Message
+            </MenuItem>
+          </Menu>
+       {/* Call Component */}
+       {showCallModal && selectedUser && (
+          <Call 
+            selectedUser={selectedUser}
+            currentUser={auth.currentUser}
+            callType={callType}
+            onClose={() => setShowCallModal(false)}
+          />
+        )}
+
         {/* Header */}
         <Box sx={{
           p: 2,
-          bgcolor: "rgba(31, 31, 31, 0.8)",
-          backdropFilter: "blur(12px)",
-          display: "flex",
-
-          width: "100vw",
-          alignItems: "center",
-          borderBottom: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
+          borderBottom: `1px solid ${premiumTheme.palette.divider}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 2
         }}>
-          <Badge
-            overlap="circular"
-            anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-            variant="dot"
-            color="success"
-            sx={{ 
-              "& .MuiBadge-dot": {
-                width: 14,
-                height: 14,
-                border: "2px solid #1f1f1f",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-              }
-            }}
-          >
-            <Avatar 
-              src={selectedUser?.photoURL} 
-              sx={{ 
-                width: 48, 
-                height: 48, 
-                boxShadow: "0 8px 16px rgba(0,0,0,0.3)",
-                border: "2px solid rgba(255,255,255,0.1)"
-              }}
-            />
-          </Badge>
-          <Box sx={{ ml: 2.5, flex: 1 }}>
-            <Typography variant="subtitle1" fontWeight={600}>
-              {selectedUser?.name}
-              {isTyping && (
-                <motion.span
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  style={{ marginLeft: 12 }}
-                >
-                  <Typography variant="caption" color="text.secondary" sx={{ fontStyle: "italic" }}>
-                    typing...
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+            <Badge
+              overlap="circular"
+              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+              variant="dot"
+              color={onlineStatus ? 'success' : 'error'}
+            >
+              <Avatar 
+                src={selectedUser?.photoURL} 
+                sx={{ 
+                  width: 40, 
+                  height: 40,
+                  border: `2px solid ${alpha(premiumTheme.palette.primary.main, 0.5)}`
+                }}
+              />
+            </Badge>
+            <Box>
+              <Typography variant="h6" sx={{ 
+                fontWeight: 600, 
+                fontSize: '1rem' 
+              }}>
+                {getDisplayName()}
+              </Typography>
+              <Typography variant="caption" sx={{ 
+                color: onlineStatus ? premiumTheme.palette.success.main : premiumTheme.palette.text.secondary,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 0.5
+              }}>
+                <Box component="span" sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: onlineStatus ? premiumTheme.palette.success.main : premiumTheme.palette.text.secondary
+                }} />
+                {onlineStatus ? 'Online' : 'Offline'}
+                {isTyping && (
+                  <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                    • typing...
                   </Typography>
-                </motion.span>
-              )}
-            </Typography>
-            <Typography variant="caption" color="text.secondary">
-              <Box component="span" sx={{
-                width: 10,
-                height: 10,
-                bgcolor: onlineStatus ? "success.main" : "error.main",
-                borderRadius: "50%",
-                mr: 1.2,
-                boxShadow: `0 0 8px ${onlineStatus ? "#00d9c5" : "#ff5252"}`
-              }} />
-              {onlineStatus ? "Online" : "Offline"}
-            </Typography>
+                )}
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Call Action Buttons */}
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <IconButton
+              onClick={initiateAudioCall}
+              sx={{
+                color: premiumTheme.palette.text.secondary,
+                '&:hover': { color: premiumTheme.palette.primary.main }
+              }}
+            >
+              <CallIcon />
+            </IconButton>
+            <IconButton
+              onClick={initiateVideoCall}
+              sx={{
+                color: premiumTheme.palette.text.secondary,
+                '&:hover': { color: premiumTheme.palette.primary.main }
+              }}
+            >
+              <VideocamIcon />
+            </IconButton>
           </Box>
         </Box>
 
-        {/* Messages */}
-        <Box sx={{
-          flex: 1,
-          overflowY: "auto",
-          p: 3,
-          "&::-webkit-scrollbar": {
-            width: "10px",
-          },
-          "&::-webkit-scrollbar-thumb": {
-            backgroundColor: "#3d3d3d",
-            borderRadius: "6px",
-            border: "2px solid #0a0a0a",
-          },
-          "&::-webkit-scrollbar-track": {
-            backgroundColor: "#0a0a0a",
-          },
-        }}>
-          <AnimatePresence>
-            {messages.map((msg) => (
-              <motion.div
-                key={msg.id}
-                layout
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, x: msg.senderId === auth.currentUser?.uid ? 100 : -100 }}
-                transition={{ type: "spring", stiffness: 150, damping: 20 }}
-              >
-                <MessageBubble iscurrentuser={msg.senderId === auth.currentUser?.uid ? 1 : 0}>
-                  <Typography variant="body2" sx={{ 
-                    wordBreak: "break-word", 
-                    lineHeight: 1.5,
-                  }}>
-                    {msg.content}
-                  </Typography>
-                  <Box sx={{ 
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    alignItems: "center",
-                    gap: 0.5,
-                    mt: 1,
-                  }}>
-                    {msg.senderId === auth.currentUser?.uid && (
-                      <Typography variant="caption" sx={{ 
-                        color: "rgba(255,255,255,0.7)",
-                        display: "flex",
-                        alignItems: "center",
-                        fontSize: "0.7rem",
-                      }}>
-                        {msg.seen ? "✓✓" : "✓"}
-                      </Typography>
-                    )}
-                    <Typography 
-                      variant="caption" 
-                      sx={{ 
-                        color: msg.senderId === auth.currentUser?.uid ? "rgba(255,255,255,0.7)" : "text.secondary",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {msg.timestamp?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                    </Typography>
-                  </Box>
-                </MessageBubble>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </Box>
-
-        {/* Input Area */}
-        <Box sx={{
-          p: 2,
-          bgcolor: "rgba(31, 31, 31, 0.8)",
-          backdropFilter: "blur(12px)",
-          borderTop: "1px solid rgba(255,255,255,0.1)",
-          boxShadow: "0 -8px 32px rgba(0,0,0,0.2)",
-        }}>
-          <Box sx={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: 1.5,
-            position: "relative",
+                
+            
+          {/* Messages Container */}
+          <Box sx={{
+            flex: 1,
+            p: 2,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1.5
           }}>
-            <IconButton
-              onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-              sx={{ 
-                color: "text.secondary",
-                bgcolor: "rgba(255,255,255,0.05)",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" }
-              }}
-            >
-              <EmojiEmotionsIcon fontSize="small" />
-            </IconButton>
-
-            {showEmojiPicker && (
+            <AnimatePresence>
+              {messages.map((msg) => (
+                <Box
+                  key={msg.id}
+                  sx={{
+                    alignSelf: msg.senderId === auth.currentUser?.uid ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%'
+                  }}
+                >
+                  <MessageBubble 
+                    msg={msg} 
+                    isCurrentUser={msg.senderId === auth.currentUser?.uid} 
+                  />
+                </Box>
+              ))}
+            </AnimatePresence>
+          </Box>
+    
+          {/* Input Area */}
+          <Box sx={{
+            p: 2,
+            borderTop: `1px solid ${premiumTheme.palette.divider}`
+          }}>
+            {/* Audio recording preview or active recording UI */}
+            {audioPreviewUrl ? (
+              <AudioPreview />
+            ) : isRecording ? (
+              <RecordingUI />
+            ) : null}
+    
+            {replyingTo && (
               <Box sx={{
-                position: "absolute",
-                bottom: "100%",
-                left: 0,
-                mb: 2,
-                zIndex: 1,
+                mb: 1,
+                p: 1,
+                borderRadius: '8px',
+                background: alpha(premiumTheme.palette.primary.main, 0.1),
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
               }}>
-                <Picker
-                  data={data}
-                  onEmojiSelect={(emoji) => setNewMessage(newMessage + emoji.native)}
-                  theme="dark"
-                  previewPosition="none"
-                />
+                <Typography variant="caption" sx={{ 
+                  color: premiumTheme.palette.primary.main,
+                  fontSize: '0.8rem'
+                }}>
+                  Replying to: {replyingTo.content}
+                </Typography>
+                <IconButton size="small" onClick={() => setReplyingTo(null)}>
+                  <CloseIcon fontSize="small" />
+                </IconButton>
               </Box>
             )}
-
-            <TextField
-              fullWidth
-              variant="outlined"
-              placeholder="Type a message..."
-              value={newMessage}
-              onChange={handleInputChange}
-              multiline
-              maxRows={4}
-              sx={{
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 28,
-                  bgcolor: "rgba(255,255,255,0.05)",
-                  border: "1px solid rgba(255,255,255,0.1)",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    borderColor: "rgba(255,255,255,0.2)",
-                  },
-                  "&.Mui-focused": {
-                    borderColor: theme.palette.primary.main,
-                  },
-                },
-              }}
-              onKeyPress={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
-            />
-
-            <IconButton
-              onClick={sendMessage}
-              disabled={!newMessage.trim()}
-              sx={{
-                bgcolor: "primary.main",
-                color: "common.white",
-                "&:hover": { 
-                  bgcolor: "primary.dark",
-                  transform: "scale(1.1)",
-                },
-                "&:disabled": { 
-                  bgcolor: "rgba(255,255,255,0.05)",
-                  color: "text.secondary",
-                },
-                transition: "all 0.2s ease",
-              }}
-            >
-              <SendIcon fontSize="small" />
-            </IconButton>
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+              <IconButton
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                sx={{
+                  color: premiumTheme.palette.text.secondary,
+                  '&:hover': { color: premiumTheme.palette.primary.main }
+                }}
+              >
+                <EmojiEmotionsIcon fontSize="small" />
+              </IconButton>
+    
+              {showEmojiPicker && (
+                <Box sx={{ 
+                  position: 'absolute',
+                  bottom: 80,
+                  zIndex: 10 
+                }}>
+                  <Picker
+                    data={data}
+                    onEmojiSelect={(emoji) => setNewMessage(newMessage + emoji.native)}
+                    theme="dark"
+                    previewPosition="none"
+                  />
+                </Box>
+              )}
+    
+              {/* Media selection buttons */}
+              <Box sx={{ display: 'flex', gap: 0.5 }}>
+                <IconButton
+                  onClick={() => {
+                    setMediaType('image');
+                    fileInputRef.current.click();
+                  }}
+                  sx={{
+                    color: premiumTheme.palette.text.secondary,
+                    '&:hover': { color: premiumTheme.palette.primary.main }
+                  }}
+                >
+                  <ImageIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  onClick={() => {
+                    setMediaType('video');
+                    fileInputRef.current.click();
+                  }}
+                  sx={{
+                    color: premiumTheme.palette.text.secondary,
+                    '&:hover': { color: premiumTheme.palette.primary.main }
+                  }}
+                >
+                  <VideoLibraryIcon fontSize="small" />
+                </IconButton>
+                <IconButton
+                  onClick={isRecording ? stopRecording : startRecording}
+                  sx={{
+                    color: isRecording ? premiumTheme.palette.error.main : premiumTheme.palette.text.secondary,
+                    '&:hover': { color: isRecording ? premiumTheme.palette.error.dark : premiumTheme.palette.primary.main }
+                  }}
+                >
+                  {isRecording ? <StopIcon fontSize="small" /> : <MicIcon fontSize="small" />}
+                </IconButton>
+              </Box>
+    
+              <TextField
+                fullWidth
+                variant="outlined"
+                placeholder="Type a message..."
+                value={newMessage}
+                onChange={handleInputChange}
+                multiline
+                maxRows={4}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: '12px',
+                    background: 'rgba(255,255,255,0.05)',
+                    '& fieldset': { borderColor: premiumTheme.palette.divider },
+                  }
+                }}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+              />
+    
+              <IconButton
+                onClick={sendMessage}
+                disabled={!newMessage.trim()}
+                sx={{
+                  background: premiumTheme.palette.primary.main,
+                  color: '#fff',
+                  '&:hover': { background: alpha(premiumTheme.palette.primary.main, 0.9) },
+                  '&:disabled': { background: 'rgba(255,255,255,0.12)' }
+                }}
+              >
+                <SendIcon fontSize="small" />
+              </IconButton>
+            </Box>
           </Box>
         </Box>
-      </Box>
-    </ThemeProvider>
+      </ThemeProvider>
+  
   );
 };
 
-export default ChatWindow;
+export default ChatWindow; 

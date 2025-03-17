@@ -15,6 +15,7 @@ import { getAuth, onAuthStateChanged } from "firebase/auth";
 const firebaseConfig = {
   apiKey: "AIzaSyAsjPu0kt8ilUMK9QDu9TobEzTMMkbhiQg",
   authDomain: "certano-97049.firebaseapp.com",
+  
   projectId: "certano-97049",
   storageBucket: "certano-97049.appspot.com",
   messagingSenderId: "713775491750",

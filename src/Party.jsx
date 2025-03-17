@@ -1,71 +1,86 @@
-import React, { useState, useEffect } from "react";
-import { db, auth } from "./Firebase";
-import { collection, addDoc, query, orderBy, onSnapshot } from "firebase/firestore";
+import React, { useState } from 'react';
 
-const Party = () => {
-  const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [musicUrl, setMusicUrl] = useState("");
+const SongSearch = () => {
+  const [query, setQuery] = useState('');
+  const [songs, setSongs] = useState([]);
+  const [error, setError] = useState(null);
+  const [currentSong, setCurrentSong] = useState(null); // Track the currently playing song
 
-  useEffect(() => {
-    const q = query(collection(db, "partyMessages"), orderBy("timestamp"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    });
+  const searchSongs = async () => {
+    const apiKey = 'bppF_e8YwOcViNo3-vIDr'; // Replace with your API key
+    const apiUrl = `https://osdb-api.confidence.sh/graphql/${apiKey}/`;
 
-    return () => unsubscribe();
-  }, []);
+    const graphqlQuery = {
+      query: `
+        query {
+          searchSong(input: {query: "${query}", limit: 5}) {
+            id
+            name
+            duration
+            url // Assuming the API returns a URL for the song
+          }
+        }
+      `,
+    };
 
-  const sendMessage = async (e) => {
-    e.preventDefault();
-    if (newMessage.trim() === "") return;
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(graphqlQuery),
+      });
 
-    await addDoc(collection(db, "partyMessages"), {
-      text: newMessage,
-      sender: auth.currentUser.displayName,
-      timestamp: new Date()
-    });
+      if (!response.ok) {
+        throw new Error('Failed to fetch songs');
+      }
 
-    setNewMessage("");
+      const result = await response.json();
+      setSongs(result.data.searchSong); // Assuming the API returns data in this structure
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  const playSong = (songUrl) => {
+    setCurrentSong(songUrl); // Set the current song URL for playback
   };
 
   return (
     <div>
-      <h2>🎉 Party Chat 🎶</h2>
-
-      {/* Music Player */}
-      <input 
-        type="text" 
-        placeholder="Enter music URL (YouTube or MP3)" 
-        value={musicUrl} 
-        onChange={(e) => setMusicUrl(e.target.value)} 
+      <h1>Song Search</h1>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Enter song name"
       />
-      {musicUrl && (
-        <iframe 
-          width="100%" 
-          height="200" 
-          src={musicUrl.replace("watch?v=", "embed/")} 
-          title="Party Music" 
-          allow="autoplay"
-        ></iframe>
-      )}
+      <button onClick={searchSongs}>Search</button>
 
-      {/* Chat Section */}
-      <div>
-        {messages.map((msg) => (
-          <p key={msg.id}><strong>{msg.sender}:</strong> {msg.text}</p>
+      {error && <p>Error: {error}</p>}
+
+      <ul>
+        {songs.map((song) => (
+          <li key={song.id}>
+            <strong>{song.name}</strong> - {song.duration}
+            <button onClick={() => playSong(song.url)}>Play</button> {/* Add a play button */}
+          </li>
         ))}
-      </div>
-      <form onSubmit={sendMessage}>
-        <input 
-          value={newMessage} 
-          onChange={(e) => setNewMessage(e.target.value)} 
-          placeholder="Type a message" 
-        />
-        <button type="submit">Send</button>
-      </form>
+      </ul>
+
+      {/* Audio Player */}
+      {currentSong && (
+        <div>
+          <h2>Now Playing</h2>
+          <audio controls autoPlay>
+            <source src={currentSong} type="audio/mpeg" />
+            Your browser does not support the audio element.
+          </audio>
+        </div>
+      )}
     </div>
   );
 };
 
-export default Party;
+export default SongSearch;
